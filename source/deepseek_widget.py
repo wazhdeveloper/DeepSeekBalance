@@ -31,6 +31,7 @@ BLUE   = "#bfdbfe"
 PURPLE = "#e9d5ff"  # 火山引擎用紫色
 
 DS_RECHARGE_URL = "https://platform.deepseek.com/top_up"
+VOLCANO_RECHARGE_URL = "https://console.volcengine.com/finance/recharge"
 
 # 开机自启
 STARTUP_REG_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
@@ -139,7 +140,10 @@ class DeepSeekTray:
                 pystray.MenuItem(self.menu_balance_ds, None, enabled=False),
                 pystray.MenuItem(self.menu_balance_volcano, None, enabled=False),
                 pystray.Menu.SEPARATOR,
-                pystray.MenuItem("充值", self.on_recharge),
+                pystray.MenuItem("充值", pystray.Menu(
+                    pystray.MenuItem("DeepSeek 充值", self.on_recharge_ds),
+                    pystray.MenuItem("火山引擎 充值", self.on_recharge_volcano),
+                )),
                 pystray.Menu.SEPARATOR,
                 pystray.MenuItem("刷新", self.on_refresh),
                 pystray.MenuItem("设置 DeepSeek API Key", self.on_settings_ds),
@@ -325,10 +329,15 @@ class DeepSeekTray:
 
     # ── 操作 ──
 
-    def on_recharge(self, icon, item):
-        """打开 DeepSeek 充值页面（火山引擎暂时不提供内嵌充值）"""
+    def on_recharge_ds(self, icon, item):
+        """打开 DeepSeek 充值页面"""
         import webbrowser
         webbrowser.open(DS_RECHARGE_URL)
+
+    def on_recharge_volcano(self, icon, item):
+        """打开火山引擎充值页面"""
+        import webbrowser
+        webbrowser.open(VOLCANO_RECHARGE_URL)
 
     def on_settings_ds(self, icon, item):
         old = self.config.get("api_key", "")
