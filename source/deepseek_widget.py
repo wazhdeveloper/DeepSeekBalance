@@ -32,6 +32,44 @@ PURPLE = "#e9d5ff"  # 火山引擎用紫色
 
 DS_RECHARGE_URL = "https://platform.deepseek.com/top_up"
 
+# 开机自启
+STARTUP_REG_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
+STARTUP_NAME = "DeepSeekBalance"
+
+
+def _is_startup_enabled():
+    """检查注册表中是否有开机自启项"""
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, STARTUP_REG_KEY, 0, winreg.KEY_READ) as k:
+            val, _ = winreg.QueryValueEx(k, STARTUP_NAME)
+            return bool(val and os.path.exists(val.split('"')[1] if '"' in val else val.split()[0]))
+    except:
+        return False
+
+
+def _toggle_startup(enable):
+    """添加或删除开机自启注册表项"""
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, STARTUP_REG_KEY, 0, winreg.KEY_SET_VALUE) as k:
+            if enable:
+                # 构建启动命令：pythonw 静默运行
+                pythonw = os.path.join(os.path.dirname(sys.executable), "pythonw.exe")
+                if not os.path.exists(pythonw):
+                    pythonw = sys.executable
+                script = os.path.abspath(sys.argv[0])
+                cmd = f'"{pythonw}" "{script}"'
+                winreg.SetValueEx(k, STARTUP_NAME, 0, winreg.REG_SZ, cmd)
+            else:
+                try:
+                    winreg.DeleteValue(k, STARTUP_NAME)
+                except:
+                    pass
+        return True
+    except:
+        return False
+
 
 
 class DeepSeekTray:
@@ -106,6 +144,9 @@ class DeepSeekTray:
                 pystray.MenuItem("刷新", self.on_refresh),
                 pystray.MenuItem("设置 DeepSeek API Key", self.on_settings_ds),
                 pystray.MenuItem("设置 火山引擎 AK/SK", self.on_settings_volcano),
+                pystray.Menu.SEPARATOR,
+                pystray.MenuItem("开机自启", self.on_toggle_startup,
+                                 checked=lambda item: _is_startup_enabled()),
                 pystray.Menu.SEPARATOR,
                 pystray.MenuItem("退出", self.on_exit),
             ))
@@ -328,6 +369,13 @@ Write-Host "$ak|$sk"
                 self.save_config()
                 self.do_update()
         except: pass
+
+    def on_toggle_startup(self, icon, item):
+        enabled = _is_startup_enabled()
+        ok = _toggle_startup(not enabled)
+        if not ok:
+            icon.notify("开机自启", "设置失败，请以管理员身份运行？")
+        self.icon.update_menu()
 
     def on_refresh(self, icon, item):
         self.do_update()
