@@ -1,0 +1,20 @@
+# 配置文件（包含 API Key，不上传！）
+deepseek_config.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+*.egg
+dist/
+build/
+*.spec
+
+# 打包临时文件
+*.exe
+!dist/*.exe
+
+# 系统
+.DS_Store
+Thumbs.db
